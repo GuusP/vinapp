@@ -2,20 +2,37 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "lista.h"
+//#include "vina.h"
+
+#define BUFFER_SIZE 1024
 
 int main(){
-    lista *l;
-    if(!(l = cria_lista()))
-        printf("Erro ao criar lista");
+    char buffer[BUFFER_SIZE];
+    FILE *test;
+    test = fopen("./test_file", "w");
+    if(!test){
+        printf("Falha ao abrir arquivo de escrita");
+        return 1;
+    }
+        
 
-    int x = 23;
-    if(!adiciona_final_lista(l, &x))
-        printf("Erro ao adicionar na lista");
+    FILE *arq_membro;
+    arq_membro = fopen("example.txt", "r");
+    if(!arq_membro){
+        printf("Falha ao abrir arquivo de leitura");
+        return 1;
+    }
+    struct stat dados;
+    stat("example.txt", &dados);
+    for (long int i = 0; i < dados.st_size; i += BUFFER_SIZE)
+    {
+        fread(buffer, , 1, arq_membro);
 
-    int *ptr;
-    ptr = l->head->dado;
-    printf("%d", *ptr);
+    }
     
+    while ()
+    {
+        fwrite(buffer, dados.st_size, 1, test);
+    }
     return 0;
 }

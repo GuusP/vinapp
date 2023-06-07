@@ -6,10 +6,10 @@
 Cria um nodo da lista. Retorna o endereço em caso de sucesso e NULL
 caso falhe
 */
-nodo *cria_nodo_lista(nodo *anterior, nodo *prox, void *valor){
-    nodo *nodo_novo;
+Nodo *cria_nodo_lista(Nodo *anterior, Nodo *prox, void *valor){
+    Nodo *nodo_novo;
 
-    if(!(nodo_novo = malloc(sizeof(nodo))))
+    if(!(nodo_novo = malloc(sizeof(Nodo))))
         return NULL;
 
     nodo_novo->anterior = anterior;
@@ -23,10 +23,10 @@ nodo *cria_nodo_lista(nodo *anterior, nodo *prox, void *valor){
 Cria uma lista vazia e retorna o endereço dela em caso de
 sucesso e NULL caso falhe
 */
-lista *cria_lista(){
-    lista *nova_lista;
+Lista *cria_lista(){
+    Lista *nova_lista;
 
-    if(!(nova_lista = malloc(sizeof(lista))))
+    if(!(nova_lista = malloc(sizeof(Lista))))
         return NULL;
 
     nova_lista->head = NULL;
@@ -37,13 +37,13 @@ lista *cria_lista(){
 /*
 Destroi uma lista e retorna NULL
 */
-lista *destroi_lista(lista *l){
+Lista *destroi_lista(Lista *l){
     if(!l)
         return NULL;
 
     while (l->head)
     {
-        nodo *prox = l->head->proximo;
+        Nodo *prox = l->head->proximo;
         l->head->proximo = NULL;
         free(l->head);
         l->head = prox;
@@ -57,11 +57,11 @@ lista *destroi_lista(lista *l){
 Adiciona um elemento na primeira posição da lista. Retorna 1
 caso de certo e 0 em caso de falha
 */
-int adiciona_inicio_lista(lista *l, void *valor){
+int adiciona_inicio_lista(Lista *l, void *valor){
     if(!l)
         return 0;
 
-    nodo *novo_nodo;
+    Nodo *novo_nodo;
     if(!(novo_nodo = cria_nodo_lista(NULL, l->head, valor)))
         return 0;
 
@@ -75,17 +75,17 @@ int adiciona_inicio_lista(lista *l, void *valor){
 Adiciona um elemento no final da lista. Retorna 1 caso de
 certo e 0 em caso de falha
 */
-int adiciona_final_lista(lista *l, void *valor){
+int adiciona_final_lista(Lista *l, void *valor){
     if(!l)
         return 0;
 
-    nodo *novo_nodo;
+    Nodo *novo_nodo;
     if(!(novo_nodo = cria_nodo_lista(NULL, NULL, valor)))
         return 0;
 
     
     if(l->head){
-        nodo *ultimo_nodo;
+        Nodo *ultimo_nodo;
         ultimo_nodo = l->head;
         while (ultimo_nodo->proximo)
             ultimo_nodo = ultimo_nodo->proximo;
@@ -105,7 +105,7 @@ int adiciona_final_lista(lista *l, void *valor){
 /*
 Retorna o endereço do primeiro elemento da lista
 */
-nodo *obtem_primeiro_lista(lista *l){
+Nodo *obtem_primeiro_lista(Lista *l){
     if(!l)
         return NULL;
 
@@ -115,7 +115,7 @@ nodo *obtem_primeiro_lista(lista *l){
 /*
 Retorna a quantidade de elementos na lista
 */
-int count(lista *l){
+int count(Lista *l){
     if(!l)
         return 0;
 

@@ -1,24 +1,24 @@
-typedef struct nodo{
+typedef struct Nodo{
     void *dado;
-    struct nodo *proximo;
-    struct nodo *anterior;
-} nodo;
+    struct Nodo *proximo;
+    struct Nodo *anterior;
+} Nodo;
 
-typedef struct lista{
-    nodo *head;
+typedef struct Lista{
+    Nodo *head;
     int quantidade;
-} lista;
+} Lista;
 
-nodo *cria_nodo_lista(nodo *anterior, nodo *prox, void *valor);
+Nodo *cria_nodo_lista(Nodo *anterior, Nodo *prox, void *valor);
 
-lista *cria_lista();
+Lista *cria_lista();
 
-lista *destroi_lista(lista *l);
+Lista *destroi_lista(Lista *l);
 
-int adiciona_inicio_lista(lista *l, void *valor);
+int adiciona_inicio_lista(Lista *l, void *valor);
 
-int adiciona_final_lista(lista *l, void *valor);
+int adiciona_final_lista(Lista *l, void *valor);
 
-nodo *obtem_primeiro_lista(lista *l);
+Nodo *obtem_primeiro_lista(Lista *l);
 
-int count(lista *l);
+int count(Lista *l);
