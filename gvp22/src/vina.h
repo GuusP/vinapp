@@ -12,7 +12,6 @@ struct Membro{
     off_t size; // tamanho em bytes
     struct timespec tempo; 
     unsigned int position; // posicao no arquivo
-    unsigned int location; // localização
 } typedef Membro;
 
 struct Diretorio{
@@ -25,8 +24,18 @@ struct Archive{
     int inicio_dir;
     int tamanho;
     FILE *archive_vpp;
+    char name[256];
 }typedef Archive;
 
 typedef enum { SUCESSO, ERRO_ABRIR_ARCHIVE, ERRO_ABRIR_MEMBRO } Return_value;
 
-Return_value incluir(Archive *archive, Diretorio *diretorio, char *caminho_membro);
+Return_value incluir(Archive *archive, char *caminho_membro);
+
+int salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive);
+
+int carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive);
+
+Return_value inicia_archive(char *caminho_archive, Archive *archive);
+
+Archive *cria_archive();
+

@@ -10,12 +10,17 @@ int main() {
     char buffer[BUFFER_SIZE];
     FILE *test;
     test = fopen("test_file", "r");
-    Membro membro;
-    membro.location = 21;
-    membro.size = 12;
-    fwrite(&membro, sizeof(Membro), 1, test);
-    fread(&membro, sizeof(Membro), 1, test);
-    printf("size: %ld - location: %u\n", membro.size, membro.location);
-    printf("%ld", ftell(test));
+    Nodo *nodo_membro;
+    Lista *l;
+    l = cria_lista();
+    Membro m;
+    /*m.location = 134;
+    adiciona_final_lista(l, &m);
+    nodo_membro = l->head;
+    fwrite(nodo_membro->dado, sizeof(Membro), 1, test);*/
+    fread(&m, sizeof(Membro), 1, test);
+    printf("location: %u\n", m.location);
+    
+
     return 0;
 }
