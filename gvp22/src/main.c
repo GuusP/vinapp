@@ -76,14 +76,14 @@ int main(int argc, char **argv){
         error_handler(inicia_archive(argv[2], archive));
         for (int i = 3; i <= argc - 1; i++)
         {
+            printf("oi");
             error_handler(incluir(archive, argv[i]));
         }
         fseek(archive->archive_vpp, 0, SEEK_SET);
-        printf("ftell: %ld", ftell(archive->archive_vpp));
         int pos;
         fread(&pos, sizeof(int), 1, archive->archive_vpp);
-        char mem[3];
-        fread(mem, sizeof(char)*3, 1, archive->archive_vpp);
+        char mem[8];
+        fread(mem, sizeof(char)*8, 1, archive->archive_vpp);
         printf("pos: %d - mem: %s", pos, mem);
     }
 

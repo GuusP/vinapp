@@ -102,9 +102,12 @@ Return_value incluir(Archive *archive, char *caminho_membro){
     nodo_membro = archive->dir_vina->membros->head;
     while (nodo_membro != NULL)
     {
+        
         Membro *membro = (Membro *)nodo_membro->dado;
         if(strcmp(novo_membro.name, membro->name))
             fseek(archive->archive_vpp, membro->position, SEEK_SET);
+
+        nodo_membro = nodo_membro->proximo;
     }
     
     stat(caminho_membro, &dados);
@@ -133,7 +136,6 @@ Return_value incluir(Archive *archive, char *caminho_membro){
     fclose(archive->archive_vpp);
     truncate(archive->name, pos_ponteiro);
     archive->archive_vpp = fopen(archive->name, "r+");
-    fseek(archive->archive_vpp, 0, SEEK_SET);
     fwrite(&archive->inicio_dir, sizeof(int), 1, archive->archive_vpp);
     
     return SUCESSO;
