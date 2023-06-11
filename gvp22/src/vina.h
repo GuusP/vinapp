@@ -11,12 +11,13 @@ struct Membro{
     mode_t mode; // permissões
     off_t size; // tamanho em bytes
     struct timespec tempo; 
-    unsigned int position; // posicao no arquivo
+    unsigned int position; // posicao no arquivo em bytes
+    unsigned int order; // ordem no arquvio
 } typedef Membro;
 
 struct Diretorio{
     Lista *membros;
-
+    int tamanho;
 } typedef Diretorio;
 
 struct Archive{
@@ -30,6 +31,8 @@ struct Archive{
 typedef enum { SUCESSO, ERRO_ABRIR_ARCHIVE, ERRO_ABRIR_MEMBRO } Return_value;
 
 Return_value incluir(Archive *archive, char *caminho_membro);
+
+Return_value remocao(Archive *archive, char *caminho_membro);
 
 int salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive);
 

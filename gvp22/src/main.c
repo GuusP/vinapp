@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <stdlib.h>
+#include <string.h>
 #include "vina.h"
 
 void error_handler(Return_value value){
@@ -76,15 +77,28 @@ int main(int argc, char **argv){
         error_handler(inicia_archive(argv[2], archive));
         for (int i = 3; i <= argc - 1; i++)
         {
-            printf("oi");
-            error_handler(incluir(archive, argv[i]));
+            int tamanho_nome = sizeof(argv[i]);
+            char nome[tamanho_nome];
+            nome[0] = '.';
+            nome[1] = '/';
+            strcpy(&(nome[2]), argv[i]);
+            error_handler(incluir(archive, nome));
         }
         fseek(archive->archive_vpp, 0, SEEK_SET);
         int pos;
         fread(&pos, sizeof(int), 1, archive->archive_vpp);
-        char mem[8];
-        fread(mem, sizeof(char)*8, 1, archive->archive_vpp);
+        char mem[7];
+        fread(mem, sizeof(char)*7, 1, archive->archive_vpp);
         printf("pos: %d - mem: %s", pos, mem);
+        //remocao(archive, "./a.txt");
+    }
+
+    if(flag_r){
+        printf("R\n");
+        Archive *archive;
+        archive = cria_archive();
+        error_handler(inicia_archive(argv[2], archive));
+        remocao(archive, "./a.txt");
     }
 
     
