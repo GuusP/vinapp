@@ -102,11 +102,14 @@ Return_value inicia_archive(char *caminho_archive, Archive *archive)
     return SUCESSO;
 }
 
-// retorna a posição em bytes do arquivo se encontrado e -1 caso não encontrado
+// retorna o membro se encontrado e null se não encontrado
 Membro *busca_membro(Diretorio *diretorio, char *caminho)
 {
+    printf("buscando...\n");
     Nodo *nodo_membro;
     nodo_membro = diretorio->membros->head;
+    if(!diretorio->membros->head)
+        printf("head dos membros esta null");
     while (nodo_membro != NULL)
     {
         Membro *membro = (Membro *)nodo_membro->dado;
@@ -184,7 +187,14 @@ Return_value remocao(Archive *archive, char *caminho_membro)
         }
 
         sobreescrever(archive->archive_vpp, archive->dir_vina->tamanho, archive->inicio_dir, posicao_escrita);
+        remove_lista(archive->dir_vina->membros, membro);
+        printf("a head agr eh: %s\n", ((Membro *)archive->dir_vina->membros)->name);
         archive->inicio_dir = posicao_escrita;
+        salvar_diretorio(archive->dir_vina, archive->inicio_dir, archive->archive_vpp);
+        int pos_ponteiro = ftell(archive->archive_vpp);
+        fclose(archive->archive_vpp);
+        truncate(archive->name, pos_ponteiro);
+        fopen(archive->name, "r+");
     }
 }
 

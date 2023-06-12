@@ -121,6 +121,7 @@ int remove_lista(Lista *l, void *valor){
 
         free(valor);
         free(nodo);
+        l->quantidade--;
 
         return 1;
     }
