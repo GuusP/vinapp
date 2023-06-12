@@ -4,7 +4,8 @@
 #include <string.h>
 #include "vina.h"
 
-void error_handler(Return_value value){
+void error_handler(Return_value value)
+{
     switch (value)
     {
     case ERRO_ABRIR_ARCHIVE:
@@ -15,13 +16,14 @@ void error_handler(Return_value value){
     case ERRO_ABRIR_MEMBRO:
         fprintf(stderr, "Erro ao abrir arquivo indicado como membro");
         exit(1);
-    
+
     default:
         break;
     }
 }
 
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+{
     int flag_i = 0;
     int flag_a = 0;
     int flag_m = 0;
@@ -64,43 +66,46 @@ int main(int argc, char **argv){
         case 'h':
             flag_h = 1;
             break;
-            
+
         default:
             break;
         }
-
     }
 
-    if(flag_i && argc >= 4){
+    if (argc >= 4)
+    {
         Archive *archive;
         archive = cria_archive();
         error_handler(inicia_archive(argv[2], archive));
-        for (int i = 3; i <= argc - 1; i++)
+
+        if (flag_i)
         {
-            int tamanho_nome = sizeof(argv[i]);
-            char nome[tamanho_nome];
-            nome[0] = '.';
-            nome[1] = '/';
-            strcpy(&(nome[2]), argv[i]);
-            error_handler(incluir(archive, nome));
+
+            for (int i = 3; i <= argc - 1; i++)
+            {
+                int tamanho_nome = sizeof(argv[i]);
+                char nome[tamanho_nome];
+                nome[0] = '.';
+                nome[1] = '/';
+                strcpy(&(nome[2]), argv[i]);
+                error_handler(incluir(archive, nome));
+            }
         }
-        fseek(archive->archive_vpp, 0, SEEK_SET);
-        int pos;
-        fread(&pos, sizeof(int), 1, archive->archive_vpp);
-        char mem[7];
-        fread(mem, sizeof(char)*7, 1, archive->archive_vpp);
-        printf("pos: %d - mem: %s", pos, mem);
-        //remocao(archive, "./a.txt");
+        else if (flag_a)
+        {
+            printf("flag_a n foi implementada");
+        }
+        else if (flag_r)
+        {
+            for (int i = 3; i <= argc - 1; i++)
+            {
+                int tamanho_nome = sizeof(argv[i]);
+                char nome[tamanho_nome];
+                nome[0] = '.';
+                nome[1] = '/';
+                strcpy(&(nome[2]), argv[i]);
+                error_handler(remocao(archive, nome));
+            }
+        }
     }
-
-    if(flag_r){
-        printf("R\n");
-        Archive *archive;
-        archive = cria_archive();
-        error_handler(inicia_archive(argv[2], archive));
-        remocao(archive, "./a.txt");
-    }
-
-    
-    
 }

@@ -22,7 +22,7 @@ int salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
 
     nodo_membro = diretorio->membros->head;
     fseek(archive, inicio_dir + sizeof(int), SEEK_SET); // pula 4 bytes que serão usados para armazenar o tamanho do diretorio
-    while (nodo_membro != NULL) // salva cada membro
+    while (nodo_membro != NULL)                         // salva cada membro
     {
         fwrite(nodo_membro->dado, sizeof(Membro), 1, archive);
         nodo_membro = nodo_membro->proximo;
@@ -44,10 +44,8 @@ int carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
     while (fread(membro_buffer, sizeof(Membro), 1, archive) == 1)
     {
         adiciona_final_lista(diretorio->membros, membro_buffer);
-        printf("oi");
+        membro_buffer = cria_membro();
     }
-
-    
 }
 
 Diretorio *criar_diretorio()
@@ -104,7 +102,6 @@ Return_value inicia_archive(char *caminho_archive, Archive *archive)
     return SUCESSO;
 }
 
-
 // retorna a posição em bytes do arquivo se encontrado e -1 caso não encontrado
 Membro *busca_membro(Diretorio *diretorio, char *caminho)
 {
@@ -127,7 +124,7 @@ Membro *retorna_membro(Diretorio *diretorio, int membro_order)
 {
     Nodo *nodo_membro;
     nodo_membro = diretorio->membros->head;
-    while (nodo_membro != NULL)
+    while (nodo_membro != NULL && membro_order < diretorio->membros->quantidade)
     {
         Membro *membro = (Membro *)nodo_membro->dado;
         if (membro->order == membro_order)
@@ -153,6 +150,7 @@ int sobreescrever(FILE *archive, int tamanho, int posicao_leitura, int posicao_e
             fseek(archive, posicao_escrita, SEEK_SET);
             fwrite(buffer, bytes_restantes, 1, archive);
             bytes_restantes = 0;
+            posicao_escrita = ftell(archive);
         }
         else
         {
@@ -175,24 +173,19 @@ Return_value remocao(Archive *archive, char *caminho_membro)
     if (membro = busca_membro(archive->dir_vina, caminho_membro))
     {
         printf("achei\n");
-        if (membro->order + 1 == archive->dir_vina->membros->quantidade)
+        
+        int posicao_escrita = membro->position;
+        Membro *proximo_membro;
+        proximo_membro = retorna_membro(archive->dir_vina, membro->order + 1);
+        while (proximo_membro != NULL)
         {
-            printf("eh o ultimo membro\n");
-            sobreescrever(archive->archive_vpp, archive->dir_vina->tamanho, archive->inicio_dir, membro->position);
+            posicao_escrita = sobreescrever(archive->archive_vpp, proximo_membro->size, proximo_membro->position, posicao_escrita);
+            proximo_membro = retorna_membro(archive->dir_vina, proximo_membro->order + 1);
         }
-        else
-        {
-            printf("n eh o ultimo membro\n");
-            Membro *proximo_membro;
-            proximo_membro = retorna_membro(archive->dir_vina, membro->order + 1);
-            int posicao_escrita = membro->position;
-            while (proximo_membro != NULL)
-            {
-                posicao_escrita = sobreescrever(archive->archive_vpp, proximo_membro->size, proximo_membro->position, posicao_escrita);
 
-                proximo_membro = retorna_membro(archive->dir_vina, proximo_membro->order + 1);
-            }
-        }
+        int novo_inicio_dir = ftell(archive->archive_vpp);
+        sobreescrever(archive->archive_vpp, archive->dir_vina->tamanho, archive->inicio_dir, posicao_escrita);
+        archive->inicio_dir = novo_inicio_dir;
     }
 }
 
