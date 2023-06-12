@@ -183,9 +183,8 @@ Return_value remocao(Archive *archive, char *caminho_membro)
             proximo_membro = retorna_membro(archive->dir_vina, proximo_membro->order + 1);
         }
 
-        int novo_inicio_dir = ftell(archive->archive_vpp);
         sobreescrever(archive->archive_vpp, archive->dir_vina->tamanho, archive->inicio_dir, posicao_escrita);
-        archive->inicio_dir = novo_inicio_dir;
+        archive->inicio_dir = posicao_escrita;
     }
 }
 
