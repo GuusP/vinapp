@@ -19,6 +19,8 @@ int adiciona_inicio_lista(Lista *l, void *valor);
 
 int adiciona_final_lista(Lista *l, void *valor);
 
+int remove_lista(Lista *l, void *valor);
+
 Nodo *obtem_primeiro_lista(Lista *l);
 
 int count(Lista *l);

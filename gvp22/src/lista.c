@@ -102,6 +102,32 @@ int adiciona_final_lista(Lista *l, void *valor){
     return 1;
 }
 
+int remove_lista(Lista *l, void *valor){
+    if(!l || !valor)
+        return 0;
+
+    Nodo *nodo;
+    nodo = l->head;
+    while(nodo != NULL && nodo->dado != valor)
+        nodo = nodo->proximo;
+
+    if(nodo){
+        if(nodo->anterior == NULL){
+            l->head = nodo->proximo;
+        }
+        else{
+            nodo->anterior->proximo = nodo->proximo;
+        }
+
+        free(valor);
+        free(nodo);
+
+        return 1;
+    }
+
+    return 0;
+}
+
 /*
 Retorna o endereço do primeiro elemento da lista
 */
