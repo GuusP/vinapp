@@ -22,16 +22,18 @@ int salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
 
     nodo_membro = diretorio->membros->head;
     fseek(archive, inicio_dir + sizeof(int), SEEK_SET); // pula 4 bytes que serão usados para armazenar o tamanho do diretorio
+    int pos_atual = ftell(archive);
     while (nodo_membro != NULL)                         // salva cada membro
     {
         fwrite(nodo_membro->dado, sizeof(Membro), 1, archive);
         nodo_membro = nodo_membro->proximo;
     }
 
-    diretorio->tamanho = ftell(archive) - inicio_dir;
+    int final_dir = ftell(archive);
+    diretorio->tamanho =  final_dir - inicio_dir;
     fseek(archive, inicio_dir, SEEK_SET);
     fwrite(&(diretorio->tamanho), sizeof(int), 1, archive);
-    fseek(archive, inicio_dir + diretorio->tamanho, SEEK_SET);
+    fseek(archive, final_dir, SEEK_SET);
 }
 
 int carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
@@ -39,10 +41,12 @@ int carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
     Membro *membro_buffer;
     membro_buffer = cria_membro();
 
+    printf("inicio_dir: %d\n", inicio_dir);
     fseek(archive, inicio_dir, SEEK_SET);
     fread(&(diretorio->tamanho), sizeof(int), 1, archive);
     while (fread(membro_buffer, sizeof(Membro), 1, archive) == 1)
     {
+        printf("lendo membro aqui\n");
         adiciona_final_lista(diretorio->membros, membro_buffer);
         membro_buffer = cria_membro();
     }
@@ -108,8 +112,6 @@ Membro *busca_membro(Diretorio *diretorio, char *caminho)
     printf("buscando...\n");
     Nodo *nodo_membro;
     nodo_membro = diretorio->membros->head;
-    if(!diretorio->membros->head)
-        printf("head dos membros esta null");
     while (nodo_membro != NULL)
     {
         Membro *membro = (Membro *)nodo_membro->dado;
@@ -141,7 +143,6 @@ Membro *retorna_membro(Diretorio *diretorio, int membro_order)
 
 int sobreescrever(FILE *archive, int tamanho, int posicao_leitura, int posicao_escrita)
 {
-    printf("tamanho: %d - posicao_leitura: %d - posicao_escrita: %d\n", tamanho, posicao_leitura, posicao_escrita);
     char buffer[BUFFER_SIZE];
     int bytes_restantes = tamanho;
     while (bytes_restantes > 0)
@@ -182,19 +183,26 @@ Return_value remocao(Archive *archive, char *caminho_membro)
         proximo_membro = retorna_membro(archive->dir_vina, membro->order + 1);
         while (proximo_membro != NULL)
         {
+            int nova_pos = posicao_escrita;
             posicao_escrita = sobreescrever(archive->archive_vpp, proximo_membro->size, proximo_membro->position, posicao_escrita);
+            proximo_membro->position = nova_pos;
+            proximo_membro->order--;
             proximo_membro = retorna_membro(archive->dir_vina, proximo_membro->order + 1);
         }
 
-        sobreescrever(archive->archive_vpp, archive->dir_vina->tamanho, archive->inicio_dir, posicao_escrita);
+        
         remove_lista(archive->dir_vina->membros, membro);
-        printf("a head agr eh: %s\n", ((Membro *)archive->dir_vina->membros)->name);
+        printf("pos_Esc: %d\n", posicao_escrita);
         archive->inicio_dir = posicao_escrita;
         salvar_diretorio(archive->dir_vina, archive->inicio_dir, archive->archive_vpp);
-        int pos_ponteiro = ftell(archive->archive_vpp);
-        fclose(archive->archive_vpp);
-        truncate(archive->name, pos_ponteiro);
-        fopen(archive->name, "r+");
+        if(ftruncate(fileno(archive->archive_vpp), ftell(archive->archive_vpp))){
+            printf("deu erro essa bomba\n");
+        }
+
+        fseek(archive->archive_vpp, 0, SEEK_SET);
+        fwrite(&archive->inicio_dir, sizeof(int), 1, archive->archive_vpp);
+
+        return SUCESSO;
     }
 }
 
@@ -247,7 +255,6 @@ Return_value incluir(Archive *archive, char *caminho_membro)
     }
 
     archive->inicio_dir = ftell(archive->archive_vpp);
-
     novo_membro->order = archive->dir_vina->membros->quantidade;
     adiciona_final_lista(archive->dir_vina->membros, novo_membro);
     salvar_diretorio(archive->dir_vina, archive->inicio_dir, archive->archive_vpp);
