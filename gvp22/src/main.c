@@ -17,6 +17,13 @@ void error_handler(Return_value value)
         fprintf(stderr, "Erro ao abrir arquivo indicado como membro");
         exit(1);
 
+    case ERRO_TRUNCAR:
+        fprintf(stderr, "Erro ao truncar arquivo indicado com archive");
+        exit(1);
+
+    case MEMBRO_NAO_ENCONTRADO:
+        fprintf(stderr, "Um membro indicado nao foi encontrado");
+
     default:
         break;
     }

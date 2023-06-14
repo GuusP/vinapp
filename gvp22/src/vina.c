@@ -175,9 +175,7 @@ Return_value remocao(Archive *archive, char *caminho_membro)
     Membro *membro;
 
     if (membro = busca_membro(archive->dir_vina, caminho_membro))
-    {
-        printf("achei\n");
-        
+    {   
         int posicao_escrita = membro->position;
         Membro *proximo_membro;
         proximo_membro = retorna_membro(archive->dir_vina, membro->order + 1);
@@ -187,7 +185,7 @@ Return_value remocao(Archive *archive, char *caminho_membro)
             posicao_escrita = sobreescrever(archive->archive_vpp, proximo_membro->size, proximo_membro->position, posicao_escrita);
             proximo_membro->position = nova_pos;
             proximo_membro->order--;
-            proximo_membro = retorna_membro(archive->dir_vina, proximo_membro->order + 1);
+            proximo_membro = retorna_membro(archive->dir_vina, proximo_membro->order + 2);
         }
 
         
@@ -195,15 +193,17 @@ Return_value remocao(Archive *archive, char *caminho_membro)
         printf("pos_Esc: %d\n", posicao_escrita);
         archive->inicio_dir = posicao_escrita;
         salvar_diretorio(archive->dir_vina, archive->inicio_dir, archive->archive_vpp);
-        if(ftruncate(fileno(archive->archive_vpp), ftell(archive->archive_vpp))){
-            printf("deu erro essa bomba\n");
-        }
+        if(ftruncate(fileno(archive->archive_vpp), ftell(archive->archive_vpp)))
+            return ERRO_TRUNCAR;
+        
 
         fseek(archive->archive_vpp, 0, SEEK_SET);
         fwrite(&archive->inicio_dir, sizeof(int), 1, archive->archive_vpp);
 
         return SUCESSO;
     }
+
+    return MEMBRO_NAO_ENCONTRADO;
 }
 
 Return_value incluir(Archive *archive, char *caminho_membro)
