@@ -28,11 +28,13 @@ struct Archive{
     char name[256];
 }typedef Archive;
 
-typedef enum { SUCESSO, ERRO_ABRIR_ARCHIVE, ERRO_ABRIR_MEMBRO, ERRO_TRUNCAR, MEMBRO_NAO_ENCONTRADO } Return_value;
+typedef enum { SUCESSO, ERRO_ABRIR_ARCHIVE, ERRO_ABRIR_MEMBRO, ERRO_TRUNCAR, MEMBRO_NAO_ENCONTRADO, TARGET_NAO_ENCONTRADO } Return_value;
 
 Return_value incluir(Archive *archive, char *caminho_membro);
 
 Return_value remocao(Archive *archive, char *caminho_membro);
+
+Return_value mover(Archive *archive, char *caminho_target, char *caminho_membro)
 
 int salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive);
 

@@ -115,4 +115,16 @@ int main(int argc, char **argv)
             }
         }
     }
+
+    if (argc >= 5)
+    {
+        if (flag_m)
+        {
+            Archive *archive;
+            archive = cria_archive();
+            error_handler(inicia_archive(argv[3], archive));
+
+            mover(archive, argv[2], argv[4]);
+        }
+    }
 }

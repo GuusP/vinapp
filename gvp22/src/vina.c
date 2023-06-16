@@ -171,7 +171,7 @@ int sobreescrever(FILE *archive, int tamanho, int posicao_leitura, int posicao_e
 }
 
 Return_value remocao(Archive *archive, char *caminho_membro)
-{
+{ 
     Membro *membro;
 
     if (membro = busca_membro(archive->dir_vina, caminho_membro))
@@ -204,6 +204,19 @@ Return_value remocao(Archive *archive, char *caminho_membro)
     }
 
     return MEMBRO_NAO_ENCONTRADO;
+}
+
+Return_value mover(Archive *archive, char *caminho_target, char *caminho_membro){
+    Membro *target;
+    Membro *membro;
+
+    if(!(target = busca_membro(archive->dir_vina, caminho_target)))
+        return TARGET_NAO_ENCONTRADO;
+
+    if(!(membro = busca_membro(archive->dir_vina, caminho_membro)));
+        return MEMBRO_NAO_ENCONTRADO;
+
+    ftruncate(fileno(archive->archive_vpp), archive->tamanho + membro->size);
 }
 
 Return_value incluir(Archive *archive, char *caminho_membro)
