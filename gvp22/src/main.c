@@ -24,6 +24,10 @@ void error_handler(Return_value value)
     case MEMBRO_NAO_ENCONTRADO:
         fprintf(stderr, "Um membro indicado nao foi encontrado");
 
+    case TAMANHO_NOME_EXCEDIDO:
+        fprintf(stderr, "Tamnho do nome do diretorio atual ou caminho para membro muito grande");
+        exit(1);
+
     default:
         break;
     }
@@ -79,6 +83,17 @@ int main(int argc, char **argv)
         }
     }
 
+    if (argc == 3)
+    {
+        if (flag_x)
+        {
+            Archive *archive;
+            archive = cria_archive();
+            error_handler(inicia_archive(argv[2], archive));
+            extrair(archive, NULL);
+        }
+    }
+
     if (argc >= 4)
     {
         Archive *archive;
@@ -112,6 +127,18 @@ int main(int argc, char **argv)
                 nome[1] = '/';
                 strcpy(&(nome[2]), argv[i]);
                 error_handler(remocao(archive, nome));
+            }
+        }
+        else if (flag_x)
+        {
+            for (int i = 3; i <= argc - 1; i++)
+            {
+                int tamanho_nome = sizeof(argv[i]);
+                char nome[tamanho_nome];
+                nome[0] = '.';
+                nome[1] = '/';
+                strcpy(&(nome[2]), argv[i]);
+                extrair(archive, nome);
             }
         }
     }
