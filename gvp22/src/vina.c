@@ -1,3 +1,10 @@
+/*
+TODO: Remover prints desnecessários
+      Comentar código
+      Mudar a função sobreescrever para usar a função copiar
+
+*/
+
 #include "vina.h"
 #include <string.h>
 #include <unistd.h>
@@ -142,7 +149,6 @@ Membro *retorna_membro(Diretorio *diretorio, int membro_order)
     return NULL;
 }
 
-/*TODO: Mudar a função sobreescrever para usar a função copiar*/
 int sobreescrever(FILE *archive, int tamanho, int posicao_leitura, int posicao_escrita)
 {
     char buffer[BUFFER_SIZE];
