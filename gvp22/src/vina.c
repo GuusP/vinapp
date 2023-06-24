@@ -2,7 +2,7 @@
 TODO: Remover prints desnecessários
       Comentar código
       Mudar a função sobreescrever para usar a função copiar
-
+      Desalocar memória
 */
 
 #include "vina.h"
@@ -10,7 +10,8 @@ TODO: Remover prints desnecessários
 #include <unistd.h>
 #include <sys/types.h>
 #include <stdlib.h>
-
+#include <pwd.h>
+#include <grp.h>
 #define BUFFER_SIZE 1024
 #define PATH_MAX 256
 
@@ -264,14 +265,18 @@ Return_value incluir(Archive *archive, char *caminho_membro)
     fseek(archive->archive_vpp, archive->inicio_dir, SEEK_SET);
 
     novo_membro = cria_membro();
-    strcpy(novo_membro->name, caminho_membro);
+    novo_membro->name[0] = '.';
+    novo_membro->name[1] = '/';
+    strcpy(&novo_membro->name[2], caminho_membro);
 
     stat(caminho_membro, &dados);
     novo_membro->position = ftell(archive->archive_vpp);
     novo_membro->size = dados.st_size;
-
+    novo_membro->uid = dados.st_uid;
+    novo_membro->mode = dados.st_mode;
+    novo_membro->mtime = dados.st_mtime;
     copiar(arq_membro, archive->archive_vpp, dados.st_size);
-
+    
     archive->inicio_dir = ftell(archive->archive_vpp);
     novo_membro->order = archive->dir_vina->membros->quantidade;
     adiciona_final_lista(archive->dir_vina->membros, novo_membro);
@@ -291,7 +296,7 @@ Return_value extrair(Archive *archive, char *caminho_membro)
     FILE *arq_membro;
     char dir_atual[PATH_MAX];
 
-    if(!getcwd(dir_atual, PATH_MAX))
+    if (!getcwd(dir_atual, PATH_MAX))
         return TAMANHO_NOME_EXCEDIDO;
 
     if (!caminho_membro)
@@ -307,7 +312,7 @@ Return_value extrair(Archive *archive, char *caminho_membro)
         }
     }
     else
-    { // extrai o membro indicado 
+    { // extrai o membro indicado
         if ((membro = busca_membro(archive->dir_vina, caminho_membro)))
         {
             size_t length = strlen(membro->name);
@@ -345,4 +350,45 @@ Return_value extrair(Archive *archive, char *caminho_membro)
 
     chdir(dir_atual);
     return SUCESSO;
+}
+
+void lista_conteudo(Archive *archive)
+{
+    Nodo *nodo_membro;
+    struct passwd *pw;
+
+    nodo_membro = archive->dir_vina->membros->head;
+    while (nodo_membro)
+    {
+        Membro *membro = (Membro *)nodo_membro->dado;
+        printf("%d ", membro->order);
+        // Permissões dono
+        printf((membro->mode & S_IRUSR) ? "r" : "-");
+        printf((membro->mode & S_IWUSR) ? "w" : "-");
+        printf((membro->mode & S_IXUSR) ? "x" : "-");
+
+        // Permissões grupo
+        printf((membro->mode & S_IRGRP) ? "r" : "-");
+        printf((membro->mode & S_IWGRP) ? "w" : "-");
+        printf((membro->mode & S_IXGRP) ? "x" : "-");
+
+        // Permissões outros
+        printf((membro->mode & S_IROTH) ? "r" : "-");
+        printf((membro->mode & S_IWOTH) ? "w" : "-");
+        printf((membro->mode & S_IXOTH) ? "x " : "- ");
+
+        if ((pw = getpwuid(membro->uid))) // coleta infos sobre o user com uid
+            printf("%s ", pw->pw_name);
+
+        printf("%ld ", membro->size);
+        struct tm* time_info = localtime(&membro->mtime); // converte o tempo para o formato local
+        
+        char buffer[80];
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", time_info); // converte o tempo para um formato legivel
+
+        printf("%s ", buffer);
+        printf("%s\n", membro->name);
+        
+        nodo_membro = nodo_membro->proximo;
+    }
 }

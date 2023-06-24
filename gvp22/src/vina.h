@@ -10,7 +10,7 @@ struct Membro{
     uid_t uid; // user id
     mode_t mode; // permissões
     off_t size; // tamanho em bytes
-    struct timespec tempo; 
+    time_t mtime; // tempo de modificação
     unsigned int position; // posicao no arquivo em bytes
     unsigned int order; // ordem no arquvio
 } typedef Membro;
@@ -46,3 +46,4 @@ Return_value inicia_archive(char *caminho_archive, Archive *archive);
 
 Archive *cria_archive();
 
+void lista_conteudo(Archive *archive);

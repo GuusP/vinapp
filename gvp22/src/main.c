@@ -83,6 +83,14 @@ int main(int argc, char **argv)
         }
     }
 
+    if (flag_c)
+    {
+        Archive *archive;
+        archive = cria_archive();
+        error_handler(inicia_archive(argv[2], archive));
+        lista_conteudo(archive);
+    }
+
     if (argc == 3)
     {
         if (flag_x)
@@ -105,12 +113,7 @@ int main(int argc, char **argv)
 
             for (int i = 3; i <= argc - 1; i++)
             {
-                int tamanho_nome = sizeof(argv[i]);
-                char nome[tamanho_nome];
-                nome[0] = '.';
-                nome[1] = '/';
-                strcpy(&(nome[2]), argv[i]);
-                error_handler(incluir(archive, nome));
+                error_handler(incluir(archive, argv[i]));
             }
         }
         else if (flag_a)
