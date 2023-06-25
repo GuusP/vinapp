@@ -28,6 +28,10 @@ void error_handler(Return_value value)
         fprintf(stderr, "Tamnho do nome do diretorio atual ou caminho para membro muito grande");
         exit(1);
 
+    case ORDEM_IGUAL:
+        fprintf(stderr, "O membro indicado ja esta logo apos ao target");
+        exit(1);
+
     default:
         break;
     }
@@ -125,7 +129,7 @@ int main(int argc, char **argv)
             for (int i = 3; i <= argc - 1; i++)
             {
                 int tamanho_nome = sizeof(argv[i]);
-                char nome[tamanho_nome];
+                char nome[tamanho_nome + 2];
                 nome[0] = '.';
                 nome[1] = '/';
                 strcpy(&(nome[2]), argv[i]);
@@ -137,7 +141,7 @@ int main(int argc, char **argv)
             for (int i = 3; i <= argc - 1; i++)
             {
                 int tamanho_nome = sizeof(argv[i]);
-                char nome[tamanho_nome];
+                char nome[tamanho_nome + 2];
                 nome[0] = '.';
                 nome[1] = '/';
                 strcpy(&(nome[2]), argv[i]);
@@ -153,8 +157,17 @@ int main(int argc, char **argv)
             Archive *archive;
             archive = cria_archive();
             error_handler(inicia_archive(argv[3], archive));
-
-            mover(archive, argv[2], argv[4]);
+            int tamanho_nome = sizeof(argv[2]);
+            char target[tamanho_nome + 2];
+            target[0] = '.';
+            target[1] = '/';
+            strcpy(&(target[2]), argv[2]);
+            tamanho_nome = sizeof(argv[4]);
+            char membro[tamanho_nome + 2];
+            membro[0] = '.';
+            membro[1] = '/';
+            strcpy(&(membro[2]), argv[4]);
+            mover(archive, target, membro);
         }
     }
 }

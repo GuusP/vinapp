@@ -25,6 +25,8 @@ Membro *cria_membro()
     return novo_membro;
 }
 
+
+
 int salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
 {
     Nodo *nodo_membro;
@@ -179,27 +181,33 @@ int sobreescrever(FILE *archive, int tamanho, int posicao_leitura, int posicao_e
     return posicao_escrita;
 }
 
+int remove_conteudo(Archive *archive, Membro *membro)
+{
+    printf("esc: %d\n", membro->position);
+    int posicao_escrita = membro->position;
+    Membro *proximo_membro;
+    proximo_membro = retorna_membro(archive->dir_vina, membro->order + 1);
+
+    while (proximo_membro != NULL)
+    {
+        int nova_pos = posicao_escrita;
+        posicao_escrita = sobreescrever(archive->archive_vpp, proximo_membro->size, proximo_membro->position, posicao_escrita);
+        proximo_membro->position = nova_pos;
+        proximo_membro->order--;
+        proximo_membro = retorna_membro(archive->dir_vina, proximo_membro->order + 2);
+    }
+
+    return posicao_escrita;
+}
+
 Return_value remocao(Archive *archive, char *caminho_membro)
 {
     Membro *membro;
 
     if (membro = busca_membro(archive->dir_vina, caminho_membro))
     {
-        int posicao_escrita = membro->position;
-        Membro *proximo_membro;
-        proximo_membro = retorna_membro(archive->dir_vina, membro->order + 1);
-        while (proximo_membro != NULL)
-        {
-            int nova_pos = posicao_escrita;
-            posicao_escrita = sobreescrever(archive->archive_vpp, proximo_membro->size, proximo_membro->position, posicao_escrita);
-            proximo_membro->position = nova_pos;
-            proximo_membro->order--;
-            proximo_membro = retorna_membro(archive->dir_vina, proximo_membro->order + 2);
-        }
-
+        archive->inicio_dir = remove_conteudo(archive, membro);
         remove_lista(archive->dir_vina->membros, membro);
-        printf("pos_Esc: %d\n", posicao_escrita);
-        archive->inicio_dir = posicao_escrita;
         salvar_diretorio(archive->dir_vina, archive->inicio_dir, archive->archive_vpp);
         if (ftruncate(fileno(archive->archive_vpp), ftell(archive->archive_vpp)))
             return ERRO_TRUNCAR;
@@ -240,15 +248,77 @@ Return_value mover(Archive *archive, char *caminho_target, char *caminho_membro)
 {
     Membro *target;
     Membro *membro;
+    int pos_escrita;
 
     if (!(target = busca_membro(archive->dir_vina, caminho_target)))
         return TARGET_NAO_ENCONTRADO;
 
     if (!(membro = busca_membro(archive->dir_vina, caminho_membro)))
-        ;
-    return MEMBRO_NAO_ENCONTRADO;
+        return MEMBRO_NAO_ENCONTRADO;
 
-    ftruncate(fileno(archive->archive_vpp), archive->tamanho + membro->size);
+    if (membro->order - 1 == target->order) // se o membro já está logo após o target, não precisa fazer nada
+        return ORDEM_IGUAL;
+
+    pos_escrita = target->position + target->size;
+    ftruncate(fileno(archive->archive_vpp), archive->tamanho + membro->size); // aumenta o tamanho do arquivo para abrir espaço para a copia do membro na nova posição
+    Membro *aux;
+
+    for (int i = archive->dir_vina->membros->quantidade - 1; i > target->order; i--)
+    {
+        aux = retorna_membro(archive->dir_vina, i);
+        for (int j = aux->position + aux->size - 1; j >= aux->position; j--)
+        {
+            /* move o conteúdo de todos os membros após o target para abrir espaço para mvoer o membro
+               é feito de trás para frente para não sobrescrever nenhum byte
+            */
+            sobreescrever(archive->archive_vpp, sizeof(char), j, j + membro->size);
+        }
+
+        aux->position += membro->size;
+    }
+    archive->inicio_dir += membro->size;
+
+    if (membro->order > target->order) // se move para trás
+    {
+        sobreescrever(archive->archive_vpp, membro->size, membro->position, pos_escrita); // move o conteúdo (bytes do membro) para a nova posição
+        for (int i = target->order + 1; i < membro->order; i++)                           // aumenta a ordem dos membros que vem depois do membro na nova posição
+        {
+            Membro *mem_atual = retorna_membro(archive->dir_vina, i);
+            mem_atual->order++;
+        }
+
+        archive->inicio_dir = remove_conteudo(archive, membro); // remove a copia do membro que está na posição antiga
+        membro->order = target->order + 1;
+        membro->position = pos_escrita;
+    }
+    else
+    {
+        /*Se for mover para frente, cria uma cópia do membro (aux) para ter os metadados do conteúdo do membro 
+          na posição original e conseguir remover
+        */
+        Membro *aux;
+        aux = cria_membro();
+        aux->position = membro->position;
+        aux->order = membro->order;
+        aux->size = membro->size;
+        sobreescrever(archive->archive_vpp, membro->size, membro->position, pos_escrita); // move para a nova posição
+        for (int i = target->order + 1; i < archive->dir_vina->membros->quantidade; i++)
+        {
+            Membro *mem_atual = retorna_membro(archive->dir_vina, i);
+            mem_atual->order++;
+        }
+        membro->position = pos_escrita;
+        membro->order = target->order + 1;
+        archive->dir_vina->membros->quantidade++; // "adiciona" a copia do membro na nova posição no diretorio (função retorna_membro usada em remove_conteudo depende do valor de quantidade)
+        archive->inicio_dir = remove_conteudo(archive, aux); // remove o conteúdo que estava na posição original
+        archive->dir_vina->membros->quantidade--; // "remove" o conteudo do membro na posição original do diretorio
+        
+        free(aux);
+    }
+
+    salvar_diretorio(archive->dir_vina, archive->inicio_dir, archive->archive_vpp);
+    if (ftruncate(fileno(archive->archive_vpp), ftell(archive->archive_vpp))) // remove espaço adicional restante
+        return ERRO_TRUNCAR;
 }
 
 Return_value incluir(Archive *archive, char *caminho_membro)
@@ -276,7 +346,7 @@ Return_value incluir(Archive *archive, char *caminho_membro)
     novo_membro->mode = dados.st_mode;
     novo_membro->mtime = dados.st_mtime;
     copiar(arq_membro, archive->archive_vpp, dados.st_size);
-    
+
     archive->inicio_dir = ftell(archive->archive_vpp);
     novo_membro->order = archive->dir_vina->membros->quantidade;
     adiciona_final_lista(archive->dir_vina->membros, novo_membro);
@@ -381,14 +451,14 @@ void lista_conteudo(Archive *archive)
             printf("%s ", pw->pw_name);
 
         printf("%ld ", membro->size);
-        struct tm* time_info = localtime(&membro->mtime); // converte o tempo para o formato local
-        
+        struct tm *time_info = localtime(&membro->mtime); // converte o tempo para o formato local
+
         char buffer[80];
         strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", time_info); // converte o tempo para um formato legivel
 
         printf("%s ", buffer);
         printf("%s\n", membro->name);
-        
+
         nodo_membro = nodo_membro->proximo;
     }
 }
