@@ -28,13 +28,13 @@ struct Archive{
     char name[256];
 }typedef Archive;
 
-typedef enum { SUCESSO, ERRO_ABRIR_ARCHIVE, ERRO_ABRIR_MEMBRO, ERRO_TRUNCAR, MEMBRO_NAO_ENCONTRADO, TARGET_NAO_ENCONTRADO, TAMANHO_NOME_EXCEDIDO, ORDEM_IGUAL} Return_value;
+typedef enum { SUCESSO, ERRO_ABRIR_ARCHIVE, ERRO_ABRIR_MEMBRO, ERRO_TRUNCAR, MEMBRO_NAO_ENCONTRADO, TARGET_NAO_ENCONTRADO, TAMANHO_NOME_EXCEDIDO, ORDEM_IGUAL, ARQUIVO_ANTIGO } Return_value;
 
-Return_value incluir(Archive *archive, char *caminho_membro);
+Return_value incluir(Archive *archive, char *caminho_membro, int flag_a);
 
-Return_value remocao(Archive *archive, char *caminho_membro);
+Return_value remocao(Archive *archive, Membro *membro);
 
-Return_value mover(Archive *archive, char *caminho_target, char *caminho_membro);
+Return_value mover(Archive *archive, Membro *target, Membro *membro);
 
 Return_value extrair(Archive *archive, char *caminho_membro);
 
@@ -47,3 +47,9 @@ Return_value inicia_archive(char *caminho_archive, Archive *archive);
 Archive *cria_archive();
 
 void lista_conteudo(Archive *archive);
+
+Membro *retorna_membro(Diretorio *diretorio, int membro_order);
+
+Membro *busca_membro(Diretorio *diretorio, char *caminho);
+
+void imprime_ajuda();

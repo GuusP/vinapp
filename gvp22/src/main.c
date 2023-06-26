@@ -9,27 +9,31 @@ void error_handler(Return_value value)
     switch (value)
     {
     case ERRO_ABRIR_ARCHIVE:
-        fprintf(stderr, "Erro ao abrir/criar arquivo indicado como archive");
+        fprintf(stderr, "Erro ao abrir/criar arquivo indicado como archive\n");
         exit(1);
         break;
 
     case ERRO_ABRIR_MEMBRO:
-        fprintf(stderr, "Erro ao abrir arquivo indicado como membro");
+        fprintf(stderr, "Erro ao abrir arquivo indicado como membro\n");
         exit(1);
 
     case ERRO_TRUNCAR:
-        fprintf(stderr, "Erro ao truncar arquivo indicado com archive");
+        fprintf(stderr, "Erro ao truncar arquivo indicado com archive\n");
         exit(1);
 
     case MEMBRO_NAO_ENCONTRADO:
-        fprintf(stderr, "Um membro indicado nao foi encontrado");
+        fprintf(stderr, "Um membro indicado nao foi encontrado\n");
 
     case TAMANHO_NOME_EXCEDIDO:
-        fprintf(stderr, "Tamnho do nome do diretorio atual ou caminho para membro muito grande");
+        fprintf(stderr, "Tamnho do nome do diretorio atual ou caminho para membro muito grande\n");
         exit(1);
 
     case ORDEM_IGUAL:
-        fprintf(stderr, "O membro indicado ja esta logo apos ao target");
+        fprintf(stderr, "O membro indicado ja esta logo apos ao target\n");
+        exit(1);
+
+    case ARQUIVO_ANTIGO:
+        fprintf(stderr, "A versao do arquivo passado eh mais antiga que a ja existente no archive\n");
         exit(1);
 
     default:
@@ -95,6 +99,11 @@ int main(int argc, char **argv)
         lista_conteudo(archive);
     }
 
+    if(flag_h){
+        imprime_ajuda();
+    }
+        
+
     if (argc == 3)
     {
         if (flag_x)
@@ -117,12 +126,15 @@ int main(int argc, char **argv)
 
             for (int i = 3; i <= argc - 1; i++)
             {
-                error_handler(incluir(archive, argv[i]));
+                error_handler(incluir(archive, argv[i], 0));
             }
         }
         else if (flag_a)
         {
-            printf("flag_a n foi implementada");
+            for (int i = 3; i <= argc - 1; i++)
+            {
+                error_handler(incluir(archive, argv[i], 1));
+            }
         }
         else if (flag_r)
         {
@@ -133,7 +145,7 @@ int main(int argc, char **argv)
                 nome[0] = '.';
                 nome[1] = '/';
                 strcpy(&(nome[2]), argv[i]);
-                error_handler(remocao(archive, nome));
+                error_handler(remocao(archive, busca_membro(archive->dir_vina, nome)));
             }
         }
         else if (flag_x)
@@ -167,7 +179,7 @@ int main(int argc, char **argv)
             membro[0] = '.';
             membro[1] = '/';
             strcpy(&(membro[2]), argv[4]);
-            mover(archive, target, membro);
+            mover(archive, busca_membro(archive->dir_vina, target), busca_membro(archive->dir_vina, membro));
         }
     }
 }

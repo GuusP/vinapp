@@ -11,9 +11,10 @@ TODO: Remover prints desnecessários
 #include <sys/types.h>
 #include <stdlib.h>
 #include <pwd.h>
-#include <grp.h>
+#include <dirent.h>
+
 #define BUFFER_SIZE 1024
-#define PATH_MAX 256
+#define TAM_NOME_DIR 256
 
 Membro *cria_membro()
 {
@@ -25,9 +26,7 @@ Membro *cria_membro()
     return novo_membro;
 }
 
-
-
-int salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
+void salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
 {
     Nodo *nodo_membro;
 
@@ -47,7 +46,7 @@ int salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
     fseek(archive, final_dir, SEEK_SET);
 }
 
-int carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
+void carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
 {
     Membro *membro_buffer;
     membro_buffer = cria_membro();
@@ -183,7 +182,6 @@ int sobreescrever(FILE *archive, int tamanho, int posicao_leitura, int posicao_e
 
 int remove_conteudo(Archive *archive, Membro *membro)
 {
-    printf("esc: %d\n", membro->position);
     int posicao_escrita = membro->position;
     Membro *proximo_membro;
     proximo_membro = retorna_membro(archive->dir_vina, membro->order + 1);
@@ -200,11 +198,9 @@ int remove_conteudo(Archive *archive, Membro *membro)
     return posicao_escrita;
 }
 
-Return_value remocao(Archive *archive, char *caminho_membro)
+Return_value remocao(Archive *archive, Membro *membro)
 {
-    Membro *membro;
-
-    if (membro = busca_membro(archive->dir_vina, caminho_membro))
+    if (membro)
     {
         archive->inicio_dir = remove_conteudo(archive, membro);
         remove_lista(archive->dir_vina->membros, membro);
@@ -244,16 +240,14 @@ void copiar(FILE *source, FILE *dest, int tam)
     }
 }
 
-Return_value mover(Archive *archive, char *caminho_target, char *caminho_membro)
+Return_value mover(Archive *archive, Membro *target, Membro *membro)
 {
-    Membro *target;
-    Membro *membro;
     int pos_escrita;
 
-    if (!(target = busca_membro(archive->dir_vina, caminho_target)))
+    if (!target)
         return TARGET_NAO_ENCONTRADO;
 
-    if (!(membro = busca_membro(archive->dir_vina, caminho_membro)))
+    if (!membro)
         return MEMBRO_NAO_ENCONTRADO;
 
     if (membro->order - 1 == target->order) // se o membro já está logo após o target, não precisa fazer nada
@@ -280,11 +274,13 @@ Return_value mover(Archive *archive, char *caminho_target, char *caminho_membro)
 
     if (membro->order > target->order) // se move para trás
     {
+
         sobreescrever(archive->archive_vpp, membro->size, membro->position, pos_escrita); // move o conteúdo (bytes do membro) para a nova posição
-        for (int i = target->order + 1; i < membro->order; i++)                           // aumenta a ordem dos membros que vem depois do membro na nova posição
+        for (int i = membro->order - 1; i > target->order; i--)                           // aumenta a ordem dos membros que vem depois do membro na nova posição
         {
             Membro *mem_atual = retorna_membro(archive->dir_vina, i);
             mem_atual->order++;
+            printf("%s: %d\n", mem_atual->name, mem_atual->order);
         }
 
         archive->inicio_dir = remove_conteudo(archive, membro); // remove a copia do membro que está na posição antiga
@@ -293,7 +289,7 @@ Return_value mover(Archive *archive, char *caminho_target, char *caminho_membro)
     }
     else
     {
-        /*Se for mover para frente, cria uma cópia do membro (aux) para ter os metadados do conteúdo do membro 
+        /*Se for mover para frente, cria uma cópia do membro (aux) para ter os metadados do conteúdo do membro
           na posição original e conseguir remover
         */
         Membro *aux;
@@ -302,17 +298,17 @@ Return_value mover(Archive *archive, char *caminho_target, char *caminho_membro)
         aux->order = membro->order;
         aux->size = membro->size;
         sobreescrever(archive->archive_vpp, membro->size, membro->position, pos_escrita); // move para a nova posição
-        for (int i = target->order + 1; i < archive->dir_vina->membros->quantidade; i++)
+        for (int i = archive->dir_vina->membros->quantidade - 1; i > target->order; i--)
         {
             Membro *mem_atual = retorna_membro(archive->dir_vina, i);
             mem_atual->order++;
         }
         membro->position = pos_escrita;
         membro->order = target->order + 1;
-        archive->dir_vina->membros->quantidade++; // "adiciona" a copia do membro na nova posição no diretorio (função retorna_membro usada em remove_conteudo depende do valor de quantidade)
+        archive->dir_vina->membros->quantidade++;            // "adiciona" a copia do membro na nova posição no diretorio (função retorna_membro usada em remove_conteudo depende do valor de quantidade)
         archive->inicio_dir = remove_conteudo(archive, aux); // remove o conteúdo que estava na posição original
-        archive->dir_vina->membros->quantidade--; // "remove" o conteudo do membro na posição original do diretorio
-        
+        archive->dir_vina->membros->quantidade--;            // "remove" o conteudo do membro na posição original do diretorio
+
         free(aux);
     }
 
@@ -321,12 +317,12 @@ Return_value mover(Archive *archive, char *caminho_target, char *caminho_membro)
         return ERRO_TRUNCAR;
 }
 
-Return_value incluir(Archive *archive, char *caminho_membro)
+Return_value incluir(Archive *archive, char *caminho_membro, int flag_a)
 {
-    char buffer[BUFFER_SIZE];
     FILE *arq_membro;
     struct stat dados;
     Membro *novo_membro;
+    Membro *membro_existente;
 
     arq_membro = fopen(caminho_membro, "r");
     if (!arq_membro)
@@ -345,28 +341,84 @@ Return_value incluir(Archive *archive, char *caminho_membro)
     novo_membro->uid = dados.st_uid;
     novo_membro->mode = dados.st_mode;
     novo_membro->mtime = dados.st_mtime;
+
+    membro_existente = busca_membro(archive->dir_vina, novo_membro->name);
+    if (flag_a && membro_existente && membro_existente->mtime > novo_membro->mtime)
+        return ARQUIVO_ANTIGO;
+
     copiar(arq_membro, archive->archive_vpp, dados.st_size);
 
     archive->inicio_dir = ftell(archive->archive_vpp);
     novo_membro->order = archive->dir_vina->membros->quantidade;
     adiciona_final_lista(archive->dir_vina->membros, novo_membro);
     salvar_diretorio(archive->dir_vina, archive->inicio_dir, archive->archive_vpp);
-    int pos_ponteiro = ftell(archive->archive_vpp);
-    fclose(archive->archive_vpp);
-    truncate(archive->name, pos_ponteiro);
-    archive->archive_vpp = fopen(archive->name, "r+");
-    fwrite(&archive->inicio_dir, sizeof(int), 1, archive->archive_vpp);
+    if (membro_existente)
+    {
+        Membro *target;
+        if (membro_existente->order > 0)
+            target = retorna_membro(archive->dir_vina, membro_existente->order - 1);
+        else
+            target = membro_existente;
+
+        lista_conteudo(archive);
+        printf("td: %d mm: %d\n", target->order, novo_membro->order);
+        mover(archive, target, novo_membro);
+        lista_conteudo(archive);
+        remocao(archive, membro_existente);
+    }
+    else
+    {
+        int pos_ponteiro = ftell(archive->archive_vpp);
+        fclose(archive->archive_vpp);
+        truncate(archive->name, pos_ponteiro);
+        archive->archive_vpp = fopen(archive->name, "r+");
+        fwrite(&archive->inicio_dir, sizeof(int), 1, archive->archive_vpp);
+    }
 
     return SUCESSO;
+}
+
+Return_value extrai_membro(Archive *archive, Membro *membro, char *dir_atual)
+{
+
+    FILE *arq_membro;
+    size_t length = strlen(membro->name);
+    int pos = 0;
+    for (int i = 0; i <= length; i++)
+    { // pega o nome dos diretórios do arquivo e entra neles se existirem ou cria se não
+        if (membro->name[i] == '/')
+        {
+            int count = i - pos;
+            char aux[count + 1];
+            strncpy(aux, &membro->name[pos], count);
+            aux[count] = '\0';
+            if (chdir(aux) == -1)
+            {
+                mkdir(aux, 0777);
+                chdir(aux);
+            }
+
+            pos = i + 1;
+        }
+        else if (membro->name[i] == '\0')
+        { // cria o arquivo extraído
+            arq_membro = fopen(&membro->name[pos], "w");
+            fseek(archive->archive_vpp, membro->position, SEEK_SET);
+            copiar(archive->archive_vpp, arq_membro, membro->size);
+            fclose(arq_membro);
+            chmod(membro->name, membro->mode);
+        }
+    }
+
+    chdir(dir_atual);
 }
 
 Return_value extrair(Archive *archive, char *caminho_membro)
 {
     Membro *membro;
-    FILE *arq_membro;
-    char dir_atual[PATH_MAX];
+    char dir_atual[TAM_NOME_DIR];
 
-    if (!getcwd(dir_atual, PATH_MAX))
+    if (!getcwd(dir_atual, TAM_NOME_DIR))
         return TAMANHO_NOME_EXCEDIDO;
 
     if (!caminho_membro)
@@ -374,51 +426,18 @@ Return_value extrair(Archive *archive, char *caminho_membro)
         int order = 0;
         while (membro = retorna_membro(archive->dir_vina, order))
         {
-            arq_membro = fopen(membro->name, "w");
-            fseek(archive->archive_vpp, membro->position, SEEK_SET);
-            copiar(archive->archive_vpp, arq_membro, membro->size);
-            fclose(arq_membro);
+            extrai_membro(archive, membro, dir_atual);
             order++;
         }
     }
     else
     { // extrai o membro indicado
         if ((membro = busca_membro(archive->dir_vina, caminho_membro)))
-        {
-            size_t length = strlen(membro->name);
-            int pos = 0;
-            for (int i = 0; i <= length; i++)
-            { // pega o nome dos diretórios do arquivo e entra neles se existirem ou cria se não
-                if (membro->name[i] == '/')
-                {
-                    int count = i - pos;
-                    char aux[count + 1];
-                    strncpy(aux, &membro->name[pos], count);
-                    aux[count] = '\0';
-                    if (chdir(aux) == -1)
-                    {
-                        mkdir(aux, 0777);
-                        chdir(aux);
-                    }
-
-                    pos = i + 1;
-                }
-                else if (membro->name[i] == '\0')
-                { // cria o arquivo extraído
-                    arq_membro = fopen(&membro->name[pos], "w");
-                    fseek(archive->archive_vpp, membro->position, SEEK_SET);
-                    copiar(archive->archive_vpp, arq_membro, membro->size);
-                    fclose(arq_membro);
-                }
-            }
-        }
+            extrai_membro(archive, membro, dir_atual);
         else
-        {
             return MEMBRO_NAO_ENCONTRADO;
-        }
     }
 
-    chdir(dir_atual);
     return SUCESSO;
 }
 
@@ -461,4 +480,16 @@ void lista_conteudo(Archive *archive)
 
         nodo_membro = nodo_membro->proximo;
     }
+}
+
+void imprime_ajuda(){
+    printf("-i: insere/acrescenta um ou mais membros ao archive. Caso o membro ja exista no archive, ele sera substituido.\nNovos membros são inseridos respeitando a ordem da linha de comando, ao final do archive;\n");
+    printf("-a: mesmo comportamento da opcao -i, mas a substituicao de um membro existente ocorre APENAS caso o parametro\n seja *mais recente* que o arquivado\n");
+    printf("-m target: move o membro indicado na linha de comando para imediatamente depois do membro target existente em archive.\n");
+    printf("-x: extrai os membros indicados de archive. Se os membros nao forem indicados, todos serao extraidos.\n");
+    printf("-r: remove os membros indicados de archive.\n");
+    printf("-c: lista o conteudo de archive em ordem, incluindo as propriedades de cada membro (nome, UID, permissoes, tamanho e data de modificacao) e sua ordem no arquivo.\n");
+    printf("-h: imprime uma pequena mensagem de ajuda com as opcoes disponiveis e encerra.\n");
+    printf("Exemplo de insercao: vina++ -i backup.vpp arq.txt foto.jpg despesas.ods\n");
+
 }

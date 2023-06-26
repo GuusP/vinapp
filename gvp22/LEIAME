@@ -1,0 +1,77 @@
+Autor: Gustavo Vinícius Paulino (GRR20220067)
+
+Estrutura do arquivador (.vpp)
+inicio_dir(4 bytes) conteúdos dos membros (X bytes) tamanho_dir (4 bytes) membros (X bytes)
+- inicio_dir: posição do arquivador que o diretório começa.
+- conteúdo dos membros: conteúdo de cada arquivo
+- tamanho_dir: tamanho do diretório
+- membros: metadados de cada arquivo do arquivador
+
+src/
+Contém todos os arquivos fontes usados na implementação do vina++.
+
+src/lista.h e src/lista.h
+Foi implementado uma biblioteca de lista para armazenar os metadados dos membros presentes no diretório do Vina++. Foi optado
+pela lista para que o usuário consiga colocar diversos arquivos no arquivador sem ficar limitado pelo tamanho de um
+vetor, por exemplo. Uma árvore poderia ter sido uma opção interesssante para manter os membros ordenados pela sua
+ordem de inclusão no diretório facilmente mas, por falta de experiência com essa estrutura de dados, a lista foi escolhida.
+A lista foi implementada de modo que fosse genérica, a fim de poder ser usada para qualquer tipo de dado.
+
+src/vina.h 
+Nesse arquivo, foi definido as estruturas usadas para representar o arquivador, seu diretório e seus membros. Além disso,
+também foi declarado as funções principais usadas pelo arquivador e que são chamadas no src/main.c e um enum com valores de 
+erros que são retornados pelas funções.
+
+- struct Membro: esse struct define os metadados necessários de um membro (um arquivo do arquivador). As variáveis aqui 
+são usadas para saber a posição (em bytes) no arquivador, sua ordem no arquivador, tempo de modificação do arquivo, UID do
+criador, tamanho do arquivo que esse membro se refere, permissões do arquivo e nome do arquivo.
+
+- struct Diretorio: É formado apenas de uma lista e um inteiro representando o tamanho do diretório (em bytes) ao ser salvo 
+no arquivador. Define a estrutura do diretório do arquivador, a qual é uma lista do tipo Membro. Cada elemento da lista
+representa os metadados (Membro) de um dos arquivos do arquivador.
+
+- struct Archive: Representa o arquivador como um todo. Possui um ponteiro para o tipo Diretorio, o qual representa o diretorio
+do arquivador, um inteiro inicio_dir que armazena a posição do arquivo do arquivador (.vpp) na qual o diretório está salvo,
+um inteiro representando o tamanho do arquivador, um ponteiro do tipo FILE que aponta para o arquivo do arquivador e uma string
+name com o nome do arquivador. 
+
+- typedef enum {} Return_value: os valores definidos nesse enum são usados como valores de retorno de algumas funções do vina
+para que esses erros possam ser tratados no src/main.c.
+
+As funções definidas no vina.h serão comentadas na próxima sessão.
+
+src/vina.c
+Aqui estão implementadas todas as funções principais para o funcionamento do vina. Essas funções são chamadas no src/main.c.
+
+void salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive):
+    Essa função salva o diretorio indicado no arquivo apontado por *archive. A escrita ocorre a partir da posição inicio_dir.
+    O salvamento consiste em para cada struct Membro presente na lista membros do *diretorio escrever o membro com fwrite em *archive
+    e escrever o valor de inicio_dir nos primeiros 4 bytes do *archive. O espaço que o diretório ocupa em *archive também é salvo.
+    Inicialmente, ocorreu o pensamento de tentar salvar os ponteiros para cada nodo da lista do diretorio mas logo se percebeu que
+    isso não seria possível por conta de serem apenas ponteiros para endereços que não estariam mais válidos em execuções futuras.
+
+void carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive):
+    Carrega os membros e as informações do diretório que estão escritas em *archive. A leitura inicia na posição inicio_dir.
+    Primeiro, é lido o tamanho do diretório. Após isso, é realizado a leitura de cada membro e eles são colocados na lista do
+    diretório. 
+
+Return_value inicia_archive(char *caminho_archive, Archive *archive):
+    Inicia o *archive a partir do arquivo indicado por *caminho_archive. Armazena um ponteiro para o arquivo em archive->archive_vpp.
+    É copiado o nome e o tamanho do arquivo para archive->name e archive->size. Em seguida, é feito a leitura dos 4 primeiros bytes 
+    do arquivo, os quais representam o inicio_dir. Então, é criado um diretório e seu ponteiro é armazenado em archive->dir_vina. 
+    Por fim, é chamado carregar_diretorio(archive->dir_vina, archive->inicio_dir, archive->archive_vpp) para carregar o diretório.
+
+Membro *busca_membro(Diretorio *diretorio, char *caminho) e Membro *retorna_membro(Diretorio *diretorio, int membro_order):
+    Essas duas funções realizam a busca de um membro na lista membros do *diretorio. A única diferençã entre elas é que a primeira
+    busca a partir do nome do membro e a segunda a partir da ordem do membro no arquivador. Retorna o membro se encontrar e NULL caso
+    contrário.
+
+int sobreescrever(FILE *archive, int tamanho, int posicao_leitura, int posicao_escrita):
+    Escreve tamanho bytes a partir de posicao_leitura em tamnho bytes a partir de posicao_escrita. Usa um buffer[BUFFER_SIZE] para 
+    ler BUFFER_SIZE bytes a partir de posicao_leitura e escrever em posicao_escrita. Conforme escreve, atualiza posicao_leitura e 
+    posicao_escrita. Para de escrever quando tamanho bytes forem escritos. Essa função é utilizada diversas vezes durante o programa.
+    Retorna a posição do ponteiro de escrita após terminar de escrever todos os bytes.
+
+
+
+
