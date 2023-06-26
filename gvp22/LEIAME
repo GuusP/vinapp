@@ -73,5 +73,70 @@ int sobreescrever(FILE *archive, int tamanho, int posicao_leitura, int posicao_e
     Retorna a posição do ponteiro de escrita após terminar de escrever todos os bytes.
 
 
+int remove_conteudo(Archive *archive, Membro *membro):
+    Remove o conteúdo de um membro de *archive->archive_vpp (.vpp). Importante ressaltar que essa função remove apenas o conteúdo
+    do arquivo que esse membro representa e não remove o membro da lista de membros do diretório. Essa função utiliza a função
+    sobreescrever para escrever os conteúdos de todos os membros que vem após o membro indicado para remoção a partir da posição
+    de escrita do membro, assim sobrescrevendo seu conteúdo. Retorna a posição do ponteiro do arquivo após terminar.
 
+Return_value remocao(Archive *archive, Membro *membro)
+    Remove o *membro do arquivador. Primeiro, remove o conteúdo do membro com a função remove_conteudo e, em seguida, remove o
+    membro da lista do diretório com a função remove_lista definida em lista.h. Após isso, salva o diretório na posição retornada
+    por remove_conteudo (para salvar após todos os membros) e trunca o arquivo do arquivador para acabar logo após o fim do diretório.
+    Retorna SUCESSO caso o membro passado não seja NULL e MEMBRO_NAO_ENCONTRADO caso contrário.
 
+void copiar(FILE *source, FILE *dest, int tam):
+    Copia tam bytes do arquivo indicado por *source para o arquivo apontado por *dest. Essa função não manipula a posição do ponteiro
+    dos arquivos passados, então a leitura e escrita são realizadas nas posições atuais de cada arquivo. Ela armazena tamanho numa
+    variável chamada bytes_restantes e, enquanto bytes_restantes for maior que zero, utiliza buffer[BUFFER_SIZE] para fazer a leitura e
+    escrita de até BUFFER_SIZE bytes por interação do loop.
+
+Return_value mover(Archive *archive, Membro *target, Membro *membro):
+    Move o conteúdo de *membro para logo depois do conteúdo de *target em archive->archive_vpp (.vpp). Primeiro, aumenta o tamanho do 
+    arquivo com ftruncate para poder mover o conteúdo dos membros após target para abrir espaço e conseguir inserir *membro após
+    target. Para abrir espaço, para cada membro com ordem maior que o target, move os bytes do conteúdo desses membros para 
+    byte_postion + membro->size, onde byte_position é a posição atual do byte. Essa movimentação é feita do último byte de cada membro
+    até o primeiro e começa do último membro do arquivador até o que está logo após o target. É feito nessa ordem para que um conteúdo
+    que está na frente no arquivo não sobrescreva um que vem depois. As posições dos conteúdos nos struct membro da lista de membros
+    e do diretório são atualizadas.
+    Com o espaço aberto, é feito a cópia do *membro para o espaço logo após *target. Ele aumenta em 1 a ordem dos membros que estão
+    entre o target e a posição antiga do membro e remove o conteúdo na posição antiga do membro. Por fim, ele salva o diretório
+    atualizado e trunca o arquivo para tirar espaço desnecessário.
+
+Return_value incluir(Archive *archive, char *caminho_membro, int flag_a):
+    Inclui o arquivo indicado por *caminho_membro no arquivador. A inserção sempre é realizada na posição que começa o diretório
+    para não sobreescrever nenhum membro existente. Se flag_a tiver valor diferente de zero, será uma operação -a.
+    Abre o arquivo e cria um membro para ineserir os metadados do arquivo. Se for -a e o tempo de modificação do arquivo a ser inserido
+    for mais antigo do que o do arquivo com mesmo nome já existente (caso tenho com o mesmo nome já existente), a função retorna. 
+    Utiliza a função copiar para copiar o conteúdo do arquivo de *caminho_membro para dentro do archive->archive_vpp (.vpp). 
+    Então, insere o membro criado com os metadados na lista do diretório e salva o diretório. Caso já exista um arquivo/membro de mesmo
+    nome no arquivador, move o arquivo/membro novo para o lado desse arquivo já existente e remove o arquivo/membro já existente. Utili-
+    za para isso as funções mover e remocao.
+
+void extrai_membro(Archive *archive, Membro *membro, char *dir_atual):
+    Extrai o membro *membro do archive. Primeiro, percorre o nome do membro para obter o caminho de pastas que deve ser criado/acessado
+    antes de extrair o arquivo. Para isso, tenta entrar na pasta obtida do nome. Se não conseguir entrar na pasta, então cria ela e 
+    entra. Esse processo se repete até obter o nome real do arquivo e cria-lo dentro da última pasta acessada. Após criar o arquivo,
+    copia o conteúdo dele que está no archive->archive_vpp. Então, realiza chmod para alterar as permissões do arquivo. Por fim,
+    volta para o diretório indicado por dir_atual.
+
+Return_value extrair(Archive *archive, char *caminho_membro):
+    Se o ponteiro *caminho_membro for NULL, extrai todos os membros/arquivos do arquivador chamando, dentro de um while, a função
+    extrai_membro. Caso contrário, busca pelo membro indicado em *caminho_membro e o extrai se estiver no arquivador.
+
+void lista_conteudo(Archive *archive):
+    Lista o conteúdo presente em archive.
+
+void imprime_ajuda():
+    Imprime uma explicação sobre cada opção do arquivador.
+
+src/main.c
+Possui a main do programa para execução e uma função para lidar com os retornos das funções.
+
+void error_handler(Return_value value):
+    Printa uma mensagem para cada erro representado por value e encerra o programa com exit(1) caso necessário.
+
+Bugs conhecidos:
+- A extração não irá extrair dentro do diretório atual caso seja usada em arquivos que não estão em diretórios dentro do diretório
+atual. Ao tentar extrair um arquivo num diretório superior "./../arquivo", o arquivo foi extraido no diretório superior
+- Ao tentar extrair um arquivo com caminho iniciando no diretório raiz "~/home/Downloads/arquivo", ocorreu SegFault. 

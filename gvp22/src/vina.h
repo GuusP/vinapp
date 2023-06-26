@@ -38,9 +38,9 @@ Return_value mover(Archive *archive, Membro *target, Membro *membro);
 
 Return_value extrair(Archive *archive, char *caminho_membro);
 
-int salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive);
+void salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive);
 
-int carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive);
+void carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive);
 
 Return_value inicia_archive(char *caminho_archive, Archive *archive);
 

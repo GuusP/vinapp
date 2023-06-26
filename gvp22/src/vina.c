@@ -32,7 +32,6 @@ void salvar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
 
     nodo_membro = diretorio->membros->head;
     fseek(archive, inicio_dir + sizeof(int), SEEK_SET); // pula 4 bytes que serão usados para armazenar o tamanho do diretorio
-    int pos_atual = ftell(archive);
     while (nodo_membro != NULL) // salva cada membro
     {
         fwrite(nodo_membro->dado, sizeof(Membro), 1, archive);
@@ -250,8 +249,6 @@ Return_value mover(Archive *archive, Membro *target, Membro *membro)
     if (!membro)
         return MEMBRO_NAO_ENCONTRADO;
 
-    if (membro->order - 1 == target->order) // se o membro já está logo após o target, não precisa fazer nada
-        return ORDEM_IGUAL;
 
     pos_escrita = target->position + target->size;
     ftruncate(fileno(archive->archive_vpp), archive->tamanho + membro->size); // aumenta o tamanho do arquivo para abrir espaço para a copia do membro na nova posição
@@ -315,6 +312,8 @@ Return_value mover(Archive *archive, Membro *target, Membro *membro)
     salvar_diretorio(archive->dir_vina, archive->inicio_dir, archive->archive_vpp);
     if (ftruncate(fileno(archive->archive_vpp), ftell(archive->archive_vpp))) // remove espaço adicional restante
         return ERRO_TRUNCAR;
+
+    return SUCESSO;
 }
 
 Return_value incluir(Archive *archive, char *caminho_membro, int flag_a)
@@ -360,10 +359,7 @@ Return_value incluir(Archive *archive, char *caminho_membro, int flag_a)
         else
             target = membro_existente;
 
-        lista_conteudo(archive);
-        printf("td: %d mm: %d\n", target->order, novo_membro->order);
         mover(archive, target, novo_membro);
-        lista_conteudo(archive);
         remocao(archive, membro_existente);
     }
     else
@@ -378,8 +374,11 @@ Return_value incluir(Archive *archive, char *caminho_membro, int flag_a)
     return SUCESSO;
 }
 
-Return_value extrai_membro(Archive *archive, Membro *membro, char *dir_atual)
+void extrai_membro(Archive *archive, Membro *membro, char *dir_atual)
 {
+
+    if(!membro)
+        return;
 
     FILE *arq_membro;
     size_t length = strlen(membro->name);
@@ -424,7 +423,7 @@ Return_value extrair(Archive *archive, char *caminho_membro)
     if (!caminho_membro)
     { // extrai todos os membros do archive
         int order = 0;
-        while (membro = retorna_membro(archive->dir_vina, order))
+        while ((membro = retorna_membro(archive->dir_vina, order)))
         {
             extrai_membro(archive, membro, dir_atual);
             order++;

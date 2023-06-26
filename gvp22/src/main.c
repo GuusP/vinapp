@@ -36,6 +36,10 @@ void error_handler(Return_value value)
         fprintf(stderr, "A versao do arquivo passado eh mais antiga que a ja existente no archive\n");
         exit(1);
 
+    case TARGET_NAO_ENCONTRADO:
+        fprintf(stderr, "Target nao encontrado\n");
+        exit(1);
+
     default:
         break;
     }
@@ -99,10 +103,10 @@ int main(int argc, char **argv)
         lista_conteudo(archive);
     }
 
-    if(flag_h){
+    if (flag_h)
+    {
         imprime_ajuda();
     }
-        
 
     if (argc == 3)
     {
