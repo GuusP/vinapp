@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall 
 
 # Diretórios
-SRC_DIR = src
+SRC_DIR = .
 BIN_DIR = .
 
 # Arquivos fonte
