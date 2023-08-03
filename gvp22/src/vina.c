@@ -50,12 +50,10 @@ void carregar_diretorio(Diretorio *diretorio, int inicio_dir, FILE *archive)
     Membro *membro_buffer;
     membro_buffer = cria_membro();
 
-    printf("inicio_dir: %d\n", inicio_dir);
     fseek(archive, inicio_dir, SEEK_SET);
     fread(&(diretorio->tamanho), sizeof(int), 1, archive);
     while (fread(membro_buffer, sizeof(Membro), 1, archive) == 1)
     {
-        printf("lendo membro aqui\n");
         adiciona_final_lista(diretorio->membros, membro_buffer);
         membro_buffer = cria_membro();
     }
@@ -118,13 +116,11 @@ Return_value inicia_archive(char *caminho_archive, Archive *archive)
 // retorna o membro se encontrado e null se não encontrado
 Membro *busca_membro(Diretorio *diretorio, char *caminho)
 {
-    printf("buscando...\n");
     Nodo *nodo_membro;
     nodo_membro = diretorio->membros->head;
     while (nodo_membro != NULL)
     {
         Membro *membro = (Membro *)nodo_membro->dado;
-        printf("%s - %s\n", caminho, membro->name);
         if (strcmp(caminho, membro->name) == 0)
             return membro;
 
@@ -277,7 +273,6 @@ Return_value mover(Archive *archive, Membro *target, Membro *membro)
         {
             Membro *mem_atual = retorna_membro(archive->dir_vina, i);
             mem_atual->order++;
-            printf("%s: %d\n", mem_atual->name, mem_atual->order);
         }
 
         archive->inicio_dir = remove_conteudo(archive, membro); // remove a copia do membro que está na posição antiga
