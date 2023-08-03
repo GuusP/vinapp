@@ -22,5 +22,32 @@ Caso sejam indicados nomes de arquivos com caminhos absolutos ou relativos, arqu
 
 Ao extrair um membro, toda a hierarquia de diretórios contidos no nome do arquivo é criada (caso não existam). 
 
+# Exemplos de execução
+
+    // inclui os arquivos "arq.txt", "foto.jpg" e "despesas.ods" em backup.vpp 
+    vina++ -i backup.vpp arq.txt foto.jpg despesas.ods
+    
+    // atualiza "despesas.ods" em backup.vpp, se o arquivo externo for mais recente
+    vina++ -a backup.vpp despesas.ods
+    
+    // extrai o arquivo arq.txt de backup.vpp
+    vina++ -x backup.vpp arq.txt
+    
+    // extrai todos os arquivos de backup.vpp
+    vina++ -x backup.vpp
+    
+    // move o arquivo "arq.txt" para depois de "despesas.ods" em backup.vpp
+    vina++ -m despesas.ods backup.vpp arq.txt
+    
+    // inclui os arquivos "xy/dir/arq.txt", "/dir/foto.jpg" em novo_backup.vpp como "./xy/dir/arq.txt", "./dir/foto.jpg"
+    vina++ -i novo_backup.vpp xy/dir/arq.txt /dir/foto.jpg
+    
+    // extrai todos os arquivos de novo_backup.vpp, criando (se não existir) 
+    // toda a hierarquia de diretórios indicada para o arquivo.
+    // Por exemplo se não existir "./xy/dir", deve ser criado o diretório ''xy'' 
+    // e abaixo dele o diretório ''dir'' e extrair o arquivo ''arq.txt'' para o diretório ''./xy/dir''
+    vina++ -x novo_backup.vpp
+
 Para checar o enunciado completo do trabalho, acesse: https://wiki.inf.ufpr.br/maziero/doku.php?id=prog2:vinapp
+
 Para uma explicação das funções e algoritmos usados, leia o arquivo src/Documentação
